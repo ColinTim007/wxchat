@@ -72,7 +72,7 @@ sync.post('/sync', async (c) => {
 // 数据清理 - 清空所有数据
 sync.post('/clear-all', async (c) => {
   try {
-    const { DB, R2 } = c.env
+    const { DB, FILES } = c.env
     const { confirmCode } = await c.req.json<{ confirmCode?: string }>()
 
     if (confirmCode !== '1234') {
@@ -89,14 +89,14 @@ sync.post('/clear-all', async (c) => {
 
     const files = await DB.prepare('SELECT r2_key FROM files').all<{ r2_key: string }>()
 
-    // 逐个删除 R2 对象；单个失败不阻断整体清理
+    // 逐个删除 KV 文件；单个失败不阻断整体清理
     let deletedFilesCount = 0
     for (const file of files.results ?? []) {
       try {
-        await R2.delete(file.r2_key)
+        await FILES.delete(file.r2_key)
         deletedFilesCount++
       } catch (error) {
-        console.error('删除R2文件失败:', file.r2_key, error)
+        console.error('删除KV文件失败:', file.r2_key, error)
       }
     }
 
@@ -110,7 +110,7 @@ sync.post('/clear-all', async (c) => {
         deletedMessages: messageCount?.count ?? 0,
         deletedFiles: fileStats?.count ?? 0,
         deletedFileSize: fileStats?.totalSize ?? 0,
-        deletedR2Files: deletedFilesCount,
+        deletedKVFiles: deletedFilesCount,
         message: '所有数据已成功清理',
       },
     })
