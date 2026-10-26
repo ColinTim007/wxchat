@@ -1,7 +1,7 @@
 // Cloudflare Workers 运行时绑定与环境变量
 export interface Env {
   DB: D1Database
-  R2: R2Bucket
+  FILES: KVNamespace
   /** 静态资源绑定（指向 Vite 构建产物 dist/） */
   ASSETS: Fetcher
   ACCESS_PASSWORD: string
