@@ -72,7 +72,7 @@ export interface ClearResult {
   deletedMessages: number
   deletedFiles: number
   deletedFileSize: number
-  deletedR2Files: number
+  deletedKVFiles: number
   message: string
 }
 
