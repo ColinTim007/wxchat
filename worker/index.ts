@@ -28,7 +28,7 @@ app.get('/api/health', (c) =>
     success: true,
     status: 'ok',
     hasDB: !!c.env.DB,
-    hasR2: !!c.env.R2,
+    hasKV: !!c.env.FILES,
     timestamp: new Date().toISOString(),
   }),
 )
