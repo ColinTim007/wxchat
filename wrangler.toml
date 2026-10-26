@@ -13,19 +13,16 @@ not_found_handling = "single-page-application"
 [[d1_databases]]
 binding = "DB"
 database_name = "wxchat"
-database_id = "b58dde57-d777-459f-a6b3-ae4de9c16368"
+database_id = "f81f19ed-7adb-431d-81ea-e8a914fd8134"
 
-# R2 存储桶绑定
-[[r2_buckets]]
-binding = "R2"
-bucket_name = "wxchat"
+# KV 文件存储绑定
+[[kv_namespaces]]
+binding = "FILES"
+id = "f7d94d4e3d5242e281276cbe198158a9"
 
 # 环境变量配置（用于鉴权）
 [vars]
-# 访问密码（明文，直接在Cloudflare Workers控制台配置）
-ACCESS_PASSWORD = "wxchat2024"
-# JWT密钥（用于会话管理）
-JWT_SECRET = "your-super-secret-jwt-key-change-this-in-production"
+
 # 会话过期时间（小时）
 SESSION_EXPIRE_HOURS = "24"
 # 最大登录尝试次数
