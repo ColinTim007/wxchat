@@ -1,4 +1,3 @@
-
 import { Hono } from 'hono'
 import type { Env, JwtPayload } from '../types.js'
 
@@ -40,9 +39,7 @@ files.post('/upload', async (c) => {
 
     try {
       const data = await file.arrayBuffer()
-
       await FILES.put(fileKey, data)
-
     } catch (storageError) {
       console.error('KV上传失败:', storageError)
       return c.json({
@@ -52,29 +49,27 @@ files.post('/upload', async (c) => {
     }
 
     try {
-      const result = await DB.prepare(
-        `INSERT INTO files
-        (original_name, file_name, file_size,
-         mime_type, r2_key, upload_device_id)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      )
-        .bind(
+      const results = await DB.batch([
+        DB.prepare(
+          `INSERT INTO files
+           (original_name, file_name, file_size,
+            mime_type, r2_key, upload_device_id)
+           VALUES (?, ?, ?, ?, ?, ?)`
+        ).bind(
           file.name,
           fileKey,
           file.size,
           file.type || 'application/octet-stream',
           fileKey,
           deviceId
-        )
-        .run()
+        ),
+        DB.prepare(
+          `INSERT INTO messages (type, file_id, device_id)
+           SELECT 'file', id, ? FROM files WHERE r2_key = ?`
+        ).bind(deviceId, fileKey)
+      ])
 
-      await DB.prepare(
-        `INSERT INTO messages
-         (type, file_id, device_id)
-         VALUES (?, ?, ?)`
-      )
-        .bind('file', result.meta.last_row_id, deviceId)
-        .run()
+      const result = results[0]
 
       return c.json({
         success: true,
@@ -85,17 +80,14 @@ files.post('/upload', async (c) => {
           r2Key: fileKey
         }
       })
-
     } catch (dbError) {
       await FILES.delete(fileKey).catch(console.error)
-
       console.error('数据库写入失败:', dbError)
       return c.json({
         success: false,
         error: '数据库写入失败'
       }, 500)
     }
-
   } catch (error) {
     console.error('文件上传失败:', error)
     return c.json({
@@ -145,14 +137,11 @@ files.get('/download/:r2Key', async (c) => {
       .bind(fileKey)
       .run()
 
-    const encodedName = encodeURIComponent(
-      fileInfo.original_name
-    )
+    const encodedName = encodeURIComponent(fileInfo.original_name)
 
     return new Response(data, {
       headers: {
-        'Content-Type':
-          fileInfo.mime_type || 'application/octet-stream',
+        'Content-Type': fileInfo.mime_type || 'application/octet-stream',
         'Content-Disposition':
           `attachment; filename="download"; filename*=UTF-8''${encodedName}`,
         'Content-Length': String(data.byteLength),
@@ -160,7 +149,6 @@ files.get('/download/:r2Key', async (c) => {
         'X-Content-Type-Options': 'nosniff'
       }
     })
-
   } catch (error) {
     console.error('文件下载失败:', error)
     return c.json({
